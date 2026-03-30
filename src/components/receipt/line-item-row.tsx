@@ -7,12 +7,14 @@ type LineItemRowProps = {
 };
 
 export function LineItemRow({ icon = "✨", description, qty, price, playful = false }: LineItemRowProps) {
-  const normalizedDescription = description.trim().toUpperCase();
   return (
-    <div className="grid grid-cols-[2.25rem_1fr_auto] items-start gap-2 py-0.5 font-mono text-[0.78rem] leading-tight">
-      <span className="text-[#222] tabular-nums">{typeof qty === "number" ? String(qty).padStart(2, "0") : "01"}</span>
-      <span className={playful ? "text-[#3d3d3d]" : "text-[#1e1e1e]"}>{normalizedDescription || icon.toUpperCase()}</span>
-      <span className="text-right text-[#171717] tabular-nums">{price.replace("$", "")}</span>
+    <div className="grid grid-cols-[1.5rem_2.7rem_1fr_auto] items-center gap-2 py-1 text-sm">
+      <span className="text-base">{icon}</span>
+      <span className="text-right font-mono text-xs tabular-nums text-[#70758a]">
+        {typeof qty === "number" ? qty.toLocaleString() : "1"}
+      </span>
+      <span className={playful ? "text-lg font-black tracking-tight text-[#cb4f99]" : "text-[#2f3241]"}>{description}</span>
+      <span className={playful ? "text-base font-bold text-[#cb4f99]" : "font-medium text-[#2f3241]"}>{price}</span>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #fcfaf5;
   --foreground: #2f3241;
 }
 
@@ -15,7 +15,52 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--background);
+  background:
+    radial-gradient(circle at 10% 10%, #ebf6ff 0%, transparent 35%),
+    radial-gradient(circle at 92% 82%, #ffe8f3 0%, transparent 30%),
+    var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.fun-bob {
+  animation: funBob 2.6s ease-in-out infinite;
+}
+
+.fun-press {
+  transition: transform 140ms ease, box-shadow 160ms ease;
+}
+
+.fun-press:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(60, 59, 86, 0.12);
+}
+
+.fun-press:active {
+  transform: scale(0.98);
+}
+
+.confetti-piece {
+  animation: confettiDrop 900ms ease-out forwards;
+}
+
+@keyframes confettiDrop {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(125px) rotate(340deg);
+    opacity: 0;
+  }
+}
+
+@keyframes funBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
 }
