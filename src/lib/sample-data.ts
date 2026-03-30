@@ -1,47 +1,37 @@
 import type { BillEvent } from "@/lib/types";
 
 function makeId(prefix: string): string {
-  return `${prefix}_${Math.random().toString(36).slice(2, 8)}`;
+  return `${prefix}_${globalThis.crypto?.randomUUID?.().slice(0, 8) ?? `${Date.now()}`}`;
 }
 
 export function createInitialBillEvent(): BillEvent {
-  const today = new Date();
-  const isoDate = today.toISOString().slice(0, 10);
-
   return {
     version: 1,
-    eventName: `Tacos & Margaritas - ${today.toLocaleDateString("en-US")}`,
-    eventDateISO: isoDate,
-    taxPercent: 0,
+    eventName: "The Corner Deli",
+    eventDateISO: "2026-03-29",
+    taxPercent: 8.75,
     sharedItems: [
       {
-        id: makeId("shared"),
-        description: "Fun",
-        quantity: 1000,
-        displayPrice: { kind: "money", cents: 0 },
-        emoji: "🎉",
-      },
-      {
-        id: makeId("shared"),
-        description: "Spending quality time together",
+        id: "shared_1",
+        description: "Fries for the table",
         quantity: 1,
-        displayPrice: { kind: "priceless" },
-        emoji: "💞",
+        displayPrice: { kind: "money", cents: 650 },
+        emoji: "🍟",
       },
     ],
     friends: [
       {
-        id: makeId("friend"),
+        id: "friend_1",
         name: "Adrian",
         items: [
-          { id: makeId("item"), description: "Birria tacos", cents: 1850, emoji: "🌮" },
-          { id: makeId("item"), description: "Margarita", cents: 1200, emoji: "🍹" },
+          { id: "item_1", description: "Turkey Club", cents: 1495, emoji: "🥪" },
+          { id: "item_2", description: "Iced Tea", cents: 425, emoji: "🧋" },
         ],
       },
       {
-        id: makeId("friend"),
+        id: "friend_2",
         name: "Taylor",
-        items: [{ id: makeId("item"), description: "Quesadilla", cents: 1450, emoji: "🧀" }],
+        items: [{ id: "item_3", description: "Chicken Caesar Wrap", cents: 1375, emoji: "🌯" }],
       },
     ],
     payment: {
@@ -49,7 +39,7 @@ export function createInitialBillEvent(): BillEvent {
       appleCashLabel: "",
       zelleTarget: "",
       phoneNumber: "310-866-0096",
-      cashTooltip: "you know where to find me 😏",
+      cashTooltip: "Cash accepted",
     },
     theme: "pastel",
   };
