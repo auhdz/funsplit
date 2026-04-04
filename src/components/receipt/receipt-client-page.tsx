@@ -90,32 +90,56 @@ export function ReceiptClientPage({ searchParams }: ReceiptClientPageProps) {
           href={VENMO_PROFILE_HREF}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex h-12 items-center justify-center overflow-hidden rounded-md border border-[#cfcfcf] bg-[#0d8dff] px-2"
+          className="flex h-12 min-w-0 items-center justify-center overflow-hidden rounded-md border border-[#cfcfcf] bg-[#0d8dff] px-2"
         >
-          <img src="/api/payment-logo/venmo" alt="Venmo" className="h-7 w-full object-contain" />
+          <img
+            src="/payment-logos/venmo.png"
+            alt="Venmo"
+            width={120}
+            height={28}
+            className="mx-auto h-7 max-h-full w-auto max-w-full object-contain"
+          />
         </a>
         <button
           type="button"
           title={APPLE_CASH_PHONE_TOOLTIP}
           onClick={() => onPaymentClick(() => copyValue(resolvedEvent.payment.appleCashLabel || "", "Apple Cash label"))}
-          className="flex h-12 items-center justify-center overflow-hidden rounded-md border border-[#cfcfcf] bg-[#0a0a0a] px-2"
+          className="flex h-12 min-w-0 items-center justify-center overflow-hidden rounded-md border border-[#cfcfcf] bg-[#0a0a0a] px-2"
         >
-          <img src="/api/payment-logo/apple" alt="Apple Cash" className="h-8 w-full object-contain" />
+          <img
+            src="/payment-logos/apple.png"
+            alt="Apple Cash"
+            width={120}
+            height={32}
+            className="mx-auto h-8 max-h-full w-auto max-w-full object-contain"
+          />
         </button>
         <a
           href={ZELLE_QR_HREF}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex h-12 items-center justify-center overflow-hidden rounded-md border border-[#cfcfcf] bg-[#5a2cd4] px-2"
+          className="flex h-12 min-w-0 items-center justify-center overflow-hidden rounded-md border border-[#cfcfcf] bg-[#5a2cd4] px-2"
         >
-          <img src="/api/payment-logo/zelle" alt="Zelle" className="h-8 w-full object-contain" />
+          <img
+            src="/payment-logos/zelle.png"
+            alt="Zelle"
+            width={120}
+            height={32}
+            className="mx-auto h-8 max-h-full w-auto max-w-full object-contain"
+          />
         </a>
         <button
           title={resolvedEvent.payment.cashTooltip || "You know where to find me"}
           onClick={() => onPaymentClick(() => undefined)}
-          className="flex h-12 items-center justify-center overflow-hidden rounded-md border border-[#cfcfcf] bg-[#f5fff5] px-2"
+          className="flex h-12 min-w-0 items-center justify-center overflow-hidden rounded-md border border-[#cfcfcf] bg-[#f5fff5] px-2"
         >
-          <img src="/api/payment-logo/cash" alt="Cash" className="h-8 w-full object-contain" />
+          <img
+            src="/payment-logos/cash.png"
+            alt="Cash"
+            width={120}
+            height={32}
+            className="mx-auto h-8 max-h-full w-auto max-w-full object-contain"
+          />
         </button>
       </div>
     </div>
