@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { encodeBillPayload } from "@/lib/codec";
-import { formatUSD } from "@/lib/format";
-import { calculateFriendTotals, centsFromInput } from "@/lib/math";
+import { centsFromInput } from "@/lib/math";
 import { createInitialBillEvent, newFriend, newPersonalItem, newSharedItem } from "@/lib/sample-data";
 import type { BillEvent, Friend, SharedItem } from "@/lib/types";
 
 export function HostDashboard() {
   const [event, setEvent] = useState<BillEvent>(() => createInitialBillEvent());
   const [copiedId, setCopiedId] = useState("");
+  const [activeFriendId, setActiveFriendId] = useState("");
 
   const payload = useMemo(() => encodeBillPayload(event), [event]);
 
@@ -21,6 +21,9 @@ export function HostDashboard() {
       href: `/receipt?bill=${payload}&for=${friend.id}`,
     }));
   }, [event.friends, payload]);
+
+  const activeFriend = event.friends.find((friend) => friend.id === activeFriendId) ?? event.friends[0];
+  const activeReceiptLink = receiptLinks.find((link) => link.id === activeFriend?.id);
 
   function updateFriend(friendId: string, updater: (friend: Friend) => Friend) {
     setEvent((previous) => ({
@@ -46,29 +49,38 @@ export function HostDashboard() {
     }
   }
 
-  return (
-    <main className="mx-auto w-full max-w-4xl px-3 py-4 sm:px-5 sm:py-8">
-      <section className="rounded-[1.8rem] border border-[#ece4d8] bg-white/95 p-4 shadow-[0_10px_25px_rgba(122,104,86,0.1)] sm:p-6">
-        <div className="mb-4 border-b border-dashed border-[#ddd4c8] pb-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-[#2f3241]">FunSplit</h1>
-          <p className="mt-1 text-sm text-[#6d7283]">Cutest way to split a dinner tab.</p>
-        </div>
+  function addAnotherReceipt() {
+    const created = newFriend();
+    setEvent((previous) => ({ ...previous, friends: [...previous.friends, created] }));
+    setActiveFriendId(created.id);
+  }
 
-        <section className="mb-5">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#7f869a]">Event Details</h2>
-          <div className="grid gap-2 sm:grid-cols-2">
+  return (
+    <main className="mx-auto w-full max-w-6xl px-5 py-8 text-[#111] sm:px-10 sm:py-12">
+      <header className="mb-10 border-b border-[#d9d9d9] pb-6">
+        <div className="mb-6 flex items-center justify-between text-sm tracking-[0.08em]">
+          <span>Menu</span>
+          <span>thanks for spending time with me :)</span>
+        </div>
+        <h1 className="text-6xl font-semibold tracking-tight sm:text-7xl">BILL MENU</h1>
+      </header>
+
+      <section className="grid gap-10 border-b border-[#d9d9d9] pb-10 sm:grid-cols-2">
+        <div>
+          <h2 className="mb-4 text-4xl font-semibold tracking-tight">EVENT</h2>
+          <div className="space-y-3">
             <input
               value={event.eventName}
               onChange={(input) => setEvent((previous) => ({ ...previous, eventName: input.target.value }))}
-              className="rounded-xl border border-[#e3e6ee] bg-white px-3 py-2"
-              placeholder="Tacos & Margaritas - 3/29/26"
+              placeholder="Event name"
+              className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg outline-none"
             />
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <input
                 type="date"
                 value={event.eventDateISO}
                 onChange={(input) => setEvent((previous) => ({ ...previous, eventDateISO: input.target.value }))}
-                className="rounded-xl border border-[#e3e6ee] bg-white px-3 py-2"
+                className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg outline-none"
               />
               <input
                 type="number"
@@ -76,198 +88,110 @@ export function HostDashboard() {
                 min="0"
                 value={event.taxPercent}
                 onChange={(input) => setEvent((previous) => ({ ...previous, taxPercent: Number(input.target.value) || 0 }))}
-                className="rounded-xl border border-[#e3e6ee] bg-white px-3 py-2"
                 placeholder="Tax %"
+                className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg outline-none"
               />
             </div>
+            <p className="text-xs uppercase tracking-[0.09em] text-[#666]">Los Angeles default tax: 9.50%</p>
           </div>
-        </section>
+        </div>
 
-        <section className="mb-5 border-t border-dashed border-[#e1d8cd] pt-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7f869a]">Shared Fun Items</h2>
-            <button
-              onClick={() => setEvent((previous) => ({ ...previous, sharedItems: [...previous.sharedItems, newSharedItem()] }))}
-              className="rounded-full bg-[#e9f3ff] px-3 py-1 text-sm text-[#365682]"
-            >
-              + Add
-            </button>
-          </div>
-          <div className="hidden grid-cols-[2.6rem_1fr_4.5rem_6rem_5.8rem_4.8rem] gap-2 px-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#8c92a5] sm:grid">
-            <span>Emoji</span>
-            <span>Description</span>
-            <span className="text-right">Qty</span>
-            <span>Type</span>
-            <span>Price</span>
-            <span />
-          </div>
-          <div className="space-y-2">
-            {event.sharedItems.map((item) => (
-              <div key={item.id} className="grid gap-2 rounded-xl border border-[#eceef4] bg-[#fcfdff] p-2 sm:grid-cols-[2.6rem_1fr_4.5rem_6rem_5.8rem_4.8rem] sm:items-center sm:p-1.5">
-                <input
-                  value={item.emoji || ""}
-                  onChange={(input) => updateSharedItem(item.id, (value) => ({ ...value, emoji: input.target.value }))}
-                  className="rounded-lg border border-[#e3e6ef] px-2 py-1 text-center"
-                />
-                <input
-                  value={item.description}
-                  onChange={(input) => updateSharedItem(item.id, (value) => ({ ...value, description: input.target.value }))}
-                  placeholder="Description"
-                  className="rounded-lg border border-[#e3e6ef] px-2 py-1"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  value={item.quantity}
-                  onChange={(input) => updateSharedItem(item.id, (value) => ({ ...value, quantity: Number(input.target.value) || 0 }))}
-                  className="rounded-lg border border-[#e3e6ef] px-2 py-1 text-right"
-                />
-                <select
-                  value={item.displayPrice.kind}
-                  onChange={(input) =>
-                    updateSharedItem(item.id, (value) => ({
-                      ...value,
-                      displayPrice:
-                        input.target.value === "priceless"
-                          ? { kind: "priceless" }
-                          : { kind: "money", cents: value.displayPrice.kind === "money" ? value.displayPrice.cents : 0 },
-                    }))
-                  }
-                  className="rounded-lg border border-[#e3e6ef] px-2 py-1"
-                >
-                  <option value="money">Money</option>
-                  <option value="priceless">Priceless</option>
-                </select>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  disabled={item.displayPrice.kind === "priceless"}
-                  value={item.displayPrice.kind === "money" ? item.displayPrice.cents / 100 : ""}
-                  onChange={(input) =>
-                    updateSharedItem(item.id, (value) => ({ ...value, displayPrice: { kind: "money", cents: centsFromInput(input.target.value) } }))
-                  }
-                  className="rounded-lg border border-[#e3e6ef] px-2 py-1 disabled:opacity-40"
-                />
-                <button
-                  onClick={() =>
-                    setEvent((previous) => ({
-                      ...previous,
-                      sharedItems: previous.sharedItems.filter((value) => value.id !== item.id),
-                    }))
-                  }
-                  className="rounded-lg bg-[#fff2f2] px-2 py-1 text-sm text-[#8d4552]"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mb-5 border-t border-dashed border-[#e1d8cd] pt-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7f869a]">Friends / Personal Items</h2>
-            <button
-              onClick={() => setEvent((previous) => ({ ...previous, friends: [...previous.friends, newFriend()] }))}
-              className="rounded-full bg-[#fce8f6] px-3 py-1 text-sm text-[#7a3f6a]"
-            >
-              + Add Friend
-            </button>
-          </div>
-          <div className="space-y-3">
-            {event.friends.map((friend) => {
-              const totals = calculateFriendTotals(friend, event.taxPercent);
-              return (
-                <article key={friend.id} className="rounded-2xl border border-[#eceef4] bg-[#fdfeff] p-3">
-                  <div className="mb-2 flex items-center gap-2">
-                    <input
-                      value={friend.name}
-                      onChange={(input) => updateFriend(friend.id, (value) => ({ ...value, name: input.target.value }))}
-                      placeholder="Friend name"
-                      className="w-full rounded-lg border border-[#e3e6ef] px-2 py-1.5"
-                    />
+        <div>
+          <h2 className="mb-4 text-4xl font-semibold tracking-tight">NAME</h2>
+          {activeFriend ? (
+            <div className="space-y-3">
+              <input
+                value={activeFriend.name}
+                onChange={(input) => updateFriend(activeFriend.id, (value) => ({ ...value, name: input.target.value }))}
+                placeholder="Receipt name"
+                className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg uppercase outline-none"
+              />
+              <button onClick={addAnotherReceipt} className="border border-[#111] px-3 py-1 text-sm uppercase tracking-[0.12em]">
+                Add Another
+              </button>
+              {event.friends.length > 1 && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {event.friends.map((friend, index) => (
                     <button
-                      onClick={() =>
-                        setEvent((previous) => ({
-                          ...previous,
-                          friends: previous.friends.filter((value) => value.id !== friend.id),
-                        }))
-                      }
-                      className="rounded-lg bg-[#fff2f2] px-2.5 py-1.5 text-sm text-[#8d4552]"
+                      key={friend.id}
+                      onClick={() => setActiveFriendId(friend.id)}
+                      className={`border px-2 py-1 text-xs uppercase tracking-[0.1em] ${
+                        friend.id === activeFriend.id ? "border-[#111] bg-[#111] text-white" : "border-[#c9c9c9]"
+                      }`}
                     >
-                      Remove
+                      {friend.name || `Receipt ${index + 1}`}
                     </button>
-                  </div>
-                  <div className="space-y-2">
-                    {friend.items.map((item) => (
-                      <div key={item.id} className="grid grid-cols-[2.6rem_1fr_5.8rem_4.8rem] gap-2">
-                        <input
-                          value={item.emoji || ""}
-                          onChange={(input) =>
-                            updateFriend(friend.id, (value) => ({
-                              ...value,
-                              items: value.items.map((inner) => (inner.id === item.id ? { ...inner, emoji: input.target.value } : inner)),
-                            }))
-                          }
-                          className="rounded-lg border border-[#e3e6ef] px-2 py-1 text-center"
-                        />
-                        <input
-                          value={item.description}
-                          onChange={(input) =>
-                            updateFriend(friend.id, (value) => ({
-                              ...value,
-                              items: value.items.map((inner) => (inner.id === item.id ? { ...inner, description: input.target.value } : inner)),
-                            }))
-                          }
-                          placeholder="Personal item"
-                          className="rounded-lg border border-[#e3e6ef] px-2 py-1"
-                        />
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={item.cents / 100}
-                          onChange={(input) =>
-                            updateFriend(friend.id, (value) => ({
-                              ...value,
-                              items: value.items.map((inner) => (inner.id === item.id ? { ...inner, cents: centsFromInput(input.target.value) } : inner)),
-                            }))
-                          }
-                          className="rounded-lg border border-[#e3e6ef] px-2 py-1"
-                        />
-                        <button
-                          onClick={() =>
-                            updateFriend(friend.id, (value) => ({
-                              ...value,
-                              items: value.items.filter((inner) => inner.id !== item.id),
-                            }))
-                          }
-                          className="rounded-lg bg-[#f3f5fa] px-2 py-1 text-xs text-[#5f6580]"
-                        >
-                          X
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      onClick={() => updateFriend(friend.id, (value) => ({ ...value, items: [...value.items, newPersonalItem()] }))}
-                      className="rounded-full bg-[#edf4ff] px-3 py-1 text-sm text-[#3a568f]"
-                    >
-                      + Add personal item
-                    </button>
-                  </div>
-                  <p className="mt-2 text-right text-sm font-medium text-[#4e5467]">Preview total: {formatUSD(totals.totalCents)}</p>
-                </article>
-              );
-            })}
-          </div>
-        </section>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <button onClick={addAnotherReceipt} className="border border-[#111] px-3 py-1 text-sm uppercase tracking-[0.12em]">
+              Add Receipt
+            </button>
+          )}
+        </div>
+      </section>
 
-        <section className="border-t border-dashed border-[#dfd6ca] pt-4">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7f869a]">Payment Setup</h2>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+      <section className="border-b border-[#d9d9d9] py-10">
+        <h2 className="mb-4 text-4xl font-semibold tracking-tight">FEES AND TIP</h2>
+        <p className="mb-4 text-xs uppercase tracking-[0.1em] text-[#666]">These are split equally by party size.</p>
+        <div className="grid gap-4 sm:grid-cols-4">
+          <label className="block">
+            <span className="text-xs uppercase tracking-[0.1em] text-[#666]">Party Size</span>
             <input
-              placeholder="Venmo handle (without @)"
+              type="number"
+              step="1"
+              min="1"
+              value={event.partySize}
+              onChange={(input) =>
+                setEvent((previous) => ({ ...previous, partySize: Math.max(1, Math.round(Number(input.target.value) || 1)) }))
+              }
+              className="mt-1 w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg outline-none"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs uppercase tracking-[0.1em] text-[#666]">Tip %</span>
+            <input
+              type="number"
+              step="0.25"
+              min="0"
+              value={event.tipPercent}
+              onChange={(input) => setEvent((previous) => ({ ...previous, tipPercent: Number(input.target.value) || 0 }))}
+              className="mt-1 w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg outline-none"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs uppercase tracking-[0.1em] text-[#666]">Service Fee</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={event.serviceFeeCents / 100}
+              onChange={(input) => setEvent((previous) => ({ ...previous, serviceFeeCents: centsFromInput(input.target.value) }))}
+              className="mt-1 w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg outline-none"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs uppercase tracking-[0.1em] text-[#666]">Delivery Fee</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={event.deliveryFeeCents / 100}
+              onChange={(input) => setEvent((previous) => ({ ...previous, deliveryFeeCents: centsFromInput(input.target.value) }))}
+              className="mt-1 w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg outline-none"
+            />
+          </label>
+        </div>
+      </section>
+
+      <section className="grid gap-10 border-b border-[#d9d9d9] py-10 sm:grid-cols-2">
+        <div>
+          <h2 className="mb-4 text-4xl font-semibold tracking-tight">PAYMENT</h2>
+          <div className="space-y-3">
+            <input
+              placeholder="Venmo handle"
               value={event.payment.venmoHandle || ""}
               onChange={(input) =>
                 setEvent((previous) => ({
@@ -275,7 +199,7 @@ export function HostDashboard() {
                   payment: { ...previous.payment, venmoHandle: input.target.value.replace("@", "") },
                 }))
               }
-              className="rounded-xl border border-[#e3e6ee] px-3 py-2 text-sm"
+              className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg outline-none"
             />
             <input
               placeholder="Apple Cash label"
@@ -286,7 +210,7 @@ export function HostDashboard() {
                   payment: { ...previous.payment, appleCashLabel: input.target.value },
                 }))
               }
-              className="rounded-xl border border-[#e3e6ee] px-3 py-2 text-sm"
+              className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg outline-none"
             />
             <input
               placeholder="Zelle email or phone"
@@ -297,7 +221,7 @@ export function HostDashboard() {
                   payment: { ...previous.payment, zelleTarget: input.target.value },
                 }))
               }
-              className="rounded-xl border border-[#e3e6ee] px-3 py-2 text-sm"
+              className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg outline-none"
             />
             <input
               placeholder="Phone number"
@@ -308,33 +232,176 @@ export function HostDashboard() {
                   payment: { ...previous.payment, phoneNumber: input.target.value },
                 }))
               }
-              className="rounded-xl border border-[#e3e6ee] px-3 py-2 text-sm"
+              className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg outline-none"
             />
           </div>
-        </section>
+        </div>
+
+        <div>
+          <h2 className="mb-4 text-4xl font-semibold tracking-tight">RECEIPT TARGET</h2>
+          <p className="border-b border-[#cfcfcf] px-1 py-2 text-lg uppercase">{activeFriend?.name || "No name yet"}</p>
+          <p className="pt-3 text-xs uppercase tracking-[0.1em] text-[#595959]">This name is used for the generated receipt below.</p>
+        </div>
       </section>
 
-      <section className="mt-4 rounded-[1.6rem] border border-[#2f3241]/20 bg-[#2f3241] p-4 text-white shadow-lg">
-        <h2 className="text-lg font-semibold">Generate Receipts</h2>
-        <p className="mt-1 text-sm text-[#d7d9e3]">One unique link per friend.</p>
-        <div className="mt-3 space-y-2">
-          {receiptLinks.map((link) => (
-            <div key={link.id} className="rounded-xl bg-white/10 p-2">
-              <div className="mb-1 text-sm font-medium">{link.name}</div>
-              <div className="flex items-center gap-2">
-                <Link href={link.href} className="truncate text-xs text-[#9fddff] underline underline-offset-2">
-                  {link.href}
-                </Link>
-                <button
-                  onClick={() => copyText(`${window.location.origin}${link.href}`, link.id)}
-                  className="rounded-md bg-white/20 px-2 py-1 text-xs"
-                >
-                  {copiedId === link.id ? "Copied" : "Copy"}
-                </button>
-              </div>
+      <section className="border-b border-[#d9d9d9] py-10">
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="text-4xl font-semibold tracking-tight">SHARED ITEMS</h2>
+          <button
+            onClick={() => setEvent((previous) => ({ ...previous, sharedItems: [...previous.sharedItems, newSharedItem()] }))}
+            className="border border-[#111] px-3 py-1 text-sm uppercase tracking-[0.12em]"
+          >
+            Add
+          </button>
+        </div>
+        <div className="hidden grid-cols-[1fr_100px_120px_120px_90px] gap-3 pb-2 text-xs uppercase tracking-[0.12em] text-[#555] sm:grid">
+          <span>Item</span>
+          <span className="text-right">Qty</span>
+          <span>Type</span>
+          <span className="text-right">Price</span>
+          <span className="text-right">Action</span>
+        </div>
+        <div className="space-y-3">
+          {event.sharedItems.map((item) => (
+            <div key={item.id} className="grid gap-2 sm:grid-cols-[1fr_100px_120px_120px_90px] sm:items-center">
+              <input
+                value={item.description}
+                onChange={(input) => updateSharedItem(item.id, (value) => ({ ...value, description: input.target.value }))}
+                placeholder="Item description"
+                className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg outline-none"
+              />
+              <input
+                type="number"
+                min="0"
+                value={item.quantity}
+                onChange={(input) => updateSharedItem(item.id, (value) => ({ ...value, quantity: Number(input.target.value) || 0 }))}
+                className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-right text-lg outline-none"
+              />
+              <select
+                value={item.displayPrice.kind}
+                onChange={(input) =>
+                  updateSharedItem(item.id, (value) => ({
+                    ...value,
+                    displayPrice:
+                      input.target.value === "priceless"
+                        ? { kind: "priceless" }
+                        : { kind: "money", cents: value.displayPrice.kind === "money" ? value.displayPrice.cents : 0 },
+                  }))
+                }
+                className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-lg outline-none"
+              >
+                <option value="money">Money</option>
+                <option value="priceless">Flat</option>
+              </select>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                disabled={item.displayPrice.kind === "priceless"}
+                value={item.displayPrice.kind === "money" ? item.displayPrice.cents / 100 : ""}
+                onChange={(input) =>
+                  updateSharedItem(item.id, (value) => ({ ...value, displayPrice: { kind: "money", cents: centsFromInput(input.target.value) } }))
+                }
+                className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-2 text-right text-lg outline-none disabled:opacity-40"
+              />
+              <button
+                onClick={() =>
+                  setEvent((previous) => ({
+                    ...previous,
+                    sharedItems: previous.sharedItems.filter((value) => value.id !== item.id),
+                  }))
+                }
+                className="border border-[#b9b9b9] px-2 py-1 text-sm"
+              >
+                Remove
+              </button>
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="border-b border-[#d9d9d9] py-10">
+        <h2 className="mb-4 font-mono text-[2.1rem] font-semibold tracking-tight uppercase">Personal Charges</h2>
+        {activeFriend ? (
+          <>
+            <div className="mb-2 grid grid-cols-[2.4rem_1fr_120px_90px] border-b border-dashed border-[#a7a7a7] pb-1 font-mono text-xs uppercase tracking-[0.1em] text-[#555]">
+              <span>Qty</span>
+              <span>Item</span>
+              <span className="text-right">Amount</span>
+              <span className="text-right">Action</span>
+            </div>
+            <div className="space-y-2">
+              {activeFriend.items.map((item) => (
+                <div key={item.id} className="grid grid-cols-[2.4rem_1fr_120px_90px] items-center gap-2 font-mono">
+                  <span className="text-[0.95rem] tabular-nums text-[#222]">01</span>
+                  <input
+                    value={item.description}
+                    onChange={(input) =>
+                      updateFriend(activeFriend.id, (value) => ({
+                        ...value,
+                        items: value.items.map((inner) => (inner.id === item.id ? { ...inner, description: input.target.value } : inner)),
+                      }))
+                    }
+                    placeholder="ITEM"
+                    className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-1.5 text-[1.03rem] uppercase outline-none"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={item.cents / 100}
+                    onChange={(input) =>
+                      updateFriend(activeFriend.id, (value) => ({
+                        ...value,
+                        items: value.items.map((inner) => (inner.id === item.id ? { ...inner, cents: centsFromInput(input.target.value) } : inner)),
+                      }))
+                    }
+                    className="w-full border-b border-[#cfcfcf] bg-transparent px-1 py-1.5 text-right text-[1.03rem] tabular-nums outline-none"
+                  />
+                  <button
+                    onClick={() =>
+                      updateFriend(activeFriend.id, (value) => ({
+                        ...value,
+                        items: value.items.filter((inner) => inner.id !== item.id),
+                      }))
+                    }
+                    className="border border-[#b9b9b9] px-2 py-1 text-xs uppercase"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => updateFriend(activeFriend.id, (value) => ({ ...value, items: [...value.items, newPersonalItem()] }))}
+              className="mt-4 border border-[#111] px-3 py-1 text-sm uppercase tracking-[0.12em]"
+            >
+              Add Personal Item
+            </button>
+          </>
+        ) : (
+          <p className="text-sm uppercase tracking-[0.1em] text-[#666]">Add a receipt name to start personal charges.</p>
+        )}
+      </section>
+
+      <section className="py-10">
+        <h2 className="mb-4 text-4xl font-semibold tracking-tight">RECEIPTS</h2>
+        {activeReceiptLink ? (
+          <div className="grid gap-2 border-b border-[#ececec] pb-3 sm:grid-cols-[220px_1fr_80px] sm:items-center">
+            <div className="text-lg uppercase">{activeReceiptLink.name}</div>
+            <Link href={activeReceiptLink.href} className="truncate text-sm underline underline-offset-2 uppercase tracking-[0.08em]">
+              View receipt
+            </Link>
+            <button
+              onClick={() => copyText(`${window.location.origin}${activeReceiptLink.href}`, activeReceiptLink.id)}
+              className="border border-[#111] px-2 py-1 text-xs uppercase"
+            >
+              {copiedId === activeReceiptLink.id ? "Copied" : "Copy"}
+            </button>
+          </div>
+        ) : (
+          <p className="text-sm uppercase tracking-[0.1em] text-[#666]">No active receipt yet.</p>
+        )}
       </section>
     </main>
   );

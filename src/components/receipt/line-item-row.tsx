@@ -1,20 +1,17 @@
 type LineItemRowProps = {
-  icon?: string;
   description: string;
   qty?: number;
   price: string;
-  playful?: boolean;
+  emphasizePrice?: boolean;
 };
 
-export function LineItemRow({ icon = "✨", description, qty, price, playful = false }: LineItemRowProps) {
+export function LineItemRow({ description, qty, price, emphasizePrice = false }: LineItemRowProps) {
+  const normalized = description.trim().toUpperCase();
   return (
-    <div className="grid grid-cols-[1.5rem_2.7rem_1fr_auto] items-center gap-2 py-1 text-sm">
-      <span className="text-base">{icon}</span>
-      <span className="text-right font-mono text-xs tabular-nums text-[#70758a]">
-        {typeof qty === "number" ? qty.toLocaleString() : "1"}
-      </span>
-      <span className={playful ? "text-lg font-black tracking-tight text-[#cb4f99]" : "text-[#2f3241]"}>{description}</span>
-      <span className={playful ? "text-base font-bold text-[#cb4f99]" : "font-medium text-[#2f3241]"}>{price}</span>
+    <div className="grid grid-cols-[2.4rem_1fr_auto] items-start gap-2 py-0.5 font-mono text-[0.82rem] leading-tight">
+      <span className="text-[#222] tabular-nums">{typeof qty === "number" ? qty.toLocaleString("en-US") : "1"}</span>
+      <span className="text-[#1e1e1e]">{normalized || "ITEM"}</span>
+      <span className={`text-right tabular-nums ${emphasizePrice ? "font-bold text-[#111]" : "text-[#171717]"}`}>{price}</span>
     </div>
   );
 }

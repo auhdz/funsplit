@@ -38,6 +38,10 @@ export type BillEvent = {
   eventName: string;
   eventDateISO: string;
   taxPercent: number;
+  partySize: number;
+  tipPercent: number;
+  serviceFeeCents: MoneyCents;
+  deliveryFeeCents: MoneyCents;
   sharedItems: SharedItem[];
   friends: Friend[];
   payment: PaymentConfig;
